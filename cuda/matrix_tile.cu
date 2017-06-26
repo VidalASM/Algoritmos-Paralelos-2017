@@ -44,6 +44,8 @@ int main()
 	const int Width = 6;
 	float h_Ma[Width][Width], h_Mb[Width][Width], h_Mc[Width][Width];
 	float *d_Ma, *d_Mb, *d_Mc; // device array
+	cudaEvent_t start, stop;
+	float elapsedTime;
 	int i, j;
 
 	/*h_Ma = (float**) malloc((Width)*sizeof(float));
@@ -80,7 +82,12 @@ int main()
 	dim3 dimGrid(Width/TILE_WIDTH, Width/TILE_WIDTH, 1);
 	dim3 dimBlock(TILE_WIDTH, TILE_WIDTH, 1);
 
-	MatrixMulKernel<<<dimGrid,dimBlock>>>(d_Ma, d_Mb, d_Mc, Width);
+	cudaEventCreate(&start);
+	cudaEventRecord(start,0);	
+  	MatrixMulKernel<<<dimGrid,dimBlock>>>(d_Ma, d_Mb, d_Mc, Width);
+  	cudaEventCreate(&stop);
+	cudaEventRecord(stop,0);
+ 	cudaEventSynchronize(stop);
 
 	// all gpu function blocked till kernel is working
 	//copy back result_array_d to result_array_h
@@ -93,6 +100,9 @@ int main()
 		}
 		printf("\n");
 	}
+
+	cudaEventElapsedTime(&elapsedTime, start,stop);
+	printf("Tiempo transcurrido : %f ms\n" ,elapsedTime);
 
 	cudaFree(d_Ma);
 	cudaFree(d_Mb);
